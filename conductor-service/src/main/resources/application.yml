@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: conductor-service
+  messages:
+    fallback-to-system-locale: false
+  output:
+    ansi:
+      enabled: ALWAYS
+server:
+  port: 8080
+
+conductor:
+  server:
+    uri: http://peasant:8080/api/
+
+# Discovery Server Access
+eureka:
+  instance:
+    leaseRenewalIntervalInSeconds: 3
+    leaseExpirationDurationInSeconds: 2
+    metadataMap:
+      instanceId: ${vcap.application.instance_id:${spring.application.name}:${spring.application.instance_id:${random.value}}}
+
+  client:
+    enabled: false
+    registryFetchIntervalSeconds: 5
+    instanceInfoReplicationIntervalSeconds: 5
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: ${vcap.services.${PREFIX:}eureka.credentials.uri:http://user:password@localhost:8761}/eureka/
+      fetchRegistry: true
+      healthcheck:
+        enabled: true

@@ -1,0 +1,63 @@
+version: '3'
+
+networks:
+  microservice-orchestration:
+
+services:
+  conductor-server:
+    build:
+      context: ./docker/conductor/server
+      args:
+        conductor_version: v2.18.0
+    image: maxsuelmarinho/netflix-conductor-server:v2.18.0
+    container_name: conductor-server
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_PROP=config.properties
+    networks:
+      - microservice-orchestration
+    links:
+      - dynomite:dyno1
+      - elasticsearch:es
+
+  conductor-ui:
+    build:
+      context: ./docker/conductor/ui
+      args:
+        conductor_version: v2.18.0
+    image: maxsuelmarinho/netflix-conductor-ui:v2.18.0
+    container_name: conductor-ui
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    environment:
+      - WF_SERVER=http://conductor-server:8080/api/
+    networks:
+      - microservice-orchestration
+    links:
+      - conductor-server
+
+  dynomite:
+    image: v1r3n/dynomite
+    container_name: dynomite
+    ports:
+      - "8102:8102"
+    networks:
+      - microservice-orchestration
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.8
+    container_name: elasticsearch
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - transport.host=0.0.0.0
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      -  microservice-orchestration
+    
