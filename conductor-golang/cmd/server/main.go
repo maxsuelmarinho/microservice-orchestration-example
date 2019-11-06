@@ -7,40 +7,64 @@ import (
 
 	conductor "github.com/netflix/conductor/client/go"
 	"github.com/netflix/conductor/client/go/task"
+	"github.com/pborman/uuid"
 	"github.com/spf13/viper"
+)
+
+const (
+	WorkflowName                   = "add_netflix_identation"
+	VerifyIfIdentsAreAddedTaskName = "verify_if_idents_are_added"
+	AddIdentsTaskName              = "add_idents"
 )
 
 var conductorClient *conductor.ConductorHttpClient
 
-type TaskDef struct {
-	Name                   string `json:"name"`
-	RetryCount             int    `json:"retryCount"`
-	RetryLogic             string `json:"retryLogic"`
-	RetryDelaySeconds      int    `json:"retryDelaySeconds"`
-	TimeoutSeconds         int    `json:"timeoutSeconds"`
-	TimeoutPolicy          string `json:"timeoutPolicy"`
-	ResponseTimeoutSeconds int    `json:"responseTimeoutSeconds"`
+type (
+	TaskDef struct {
+		Name                   string `json:"name"`
+		RetryCount             int    `json:"retryCount"`
+		RetryLogic             string `json:"retryLogic"`
+		RetryDelaySeconds      int    `json:"retryDelaySeconds"`
+		TimeoutSeconds         int    `json:"timeoutSeconds"`
+		TimeoutPolicy          string `json:"timeoutPolicy"`
+		ResponseTimeoutSeconds int    `json:"responseTimeoutSeconds"`
+	}
+
+	WorkflowDef struct {
+		Name          string `json:"name"`
+		Description   string `json:"description"`
+		Version       int    `json:"version"`
+		SchemaVersion int    `json:"schemaVersion"`
+		Tasks         []Task `json:"tasks"`
+	}
+
+	Task interface {
+		GetType() string
+	}
+
+	SimpleTask struct {
+		Name              string                 `json:"name"`
+		TaskReferenceName string                 `json:"taskReferenceName"`
+		InputParameters   map[string]interface{} `json:"inputParameters"`
+		Type              string                 `json:"type"`
+	}
+
+	DecisionTask struct {
+		CaseValueParam    string                 `json:"caseValueParam"`
+		DecisionCases     map[string]interface{} `json:"decisionCases"`
+		Name              string                 `json:"name"`
+		TaskReferenceName string                 `json:"taskReferenceName"`
+		InputParameters   map[string]interface{} `json:"inputParameters"`
+		Type              string                 `json:"type"`
+	}
+)
+
+func (t SimpleTask) GetType() string {
+	return t.Type
 }
 
-type WorkflowDef struct {
-	Name          string  `json:"name"`
-	Description   string  `json:"description"`
-	Version       int     `json:"version"`
-	SchemaVersion int     `json:"schemaVersion"`
-	Tasks         []*Task `json:"tasks"`
-}
-
-type Task struct {
-	Name              string                 `json:"name"`
-	TaskReferenceName string                 `json:"taskReferenceName"`
-	InputParameters   map[string]interface{} `json:"inputParameters"`
-	Type              string                 `json:"type"`
-}
-
-type DecisionTask struct {
-	CaseValueParam string                 `json:"caseValueParam"`
-	DecisionCases  map[string]interface{} `json:"decisionCases"`
-	Task
+func (t DecisionTask) GetType() string {
+	return t.Type
 }
 
 func init() {
@@ -52,7 +76,7 @@ func init() {
 
 	// this task will be retried 3 times on failure with 10 seconds between each retry.
 	verifyIfIdentsAreAddedTaskDef := &TaskDef{
-		Name:                   "verify_if_idents_are_added",
+		Name:                   VerifyIfIdentsAreAddedTaskName,
 		RetryCount:             3,
 		RetryLogic:             "FIXED",
 		RetryDelaySeconds:      10,
@@ -62,7 +86,7 @@ func init() {
 	}
 
 	addIdentsTaskDef := &TaskDef{
-		Name:                   "add_idents",
+		Name:                   AddIdentsTaskName,
 		RetryCount:             3,
 		RetryLogic:             "FIXED",
 		RetryDelaySeconds:      10,
@@ -76,26 +100,26 @@ func init() {
 
 	response, err := conductorClient.RegisterTaskDefs(string(request))
 	if err != nil {
-		log.Fatalf("error while trying to register task definitions", err)
+		log.Fatalf("error while trying to register task definitions: %v", err)
 		return
 	}
 	log.Println(response)
 
 	workflowDef := WorkflowDef{
-		Name:          "add_netflix_identation",
+		Name:          WorkflowName,
 		Description:   "Adds Netflix Identation to video files.",
 		Version:       1,
 		SchemaVersion: 2,
-		Tasks: []*Task{
-			&Task{
-				Name:              "verify_if_idents_are_added",
+		Tasks: []Task{
+			SimpleTask{
+				Name:              VerifyIfIdentsAreAddedTaskName,
 				TaskReferenceName: "ident_verification",
 				InputParameters: map[string]interface{}{
 					"contentId": "${workflow.input.contentId}",
 				},
 				Type: "SIMPLE",
 			},
-			&DecisionTask{
+			DecisionTask{
 				Name:              "decide_task",
 				TaskReferenceName: "is_idents_added",
 				InputParameters: map[string]interface{}{
@@ -104,9 +128,9 @@ func init() {
 				Type:           "DECISION",
 				CaseValueParam: "case_value_param",
 				DecisionCases: map[string]interface{}{
-					"false": []*Task{
-						&Task{
-							Name:              "add_idents",
+					"false": []Task{
+						SimpleTask{
+							Name:              AddIdentsTaskName,
 							TaskReferenceName: "add_idents_by_type",
 							InputParameters: map[string]interface{}{
 								"identType": "${workflow.input.identType}",
@@ -119,11 +143,12 @@ func init() {
 		},
 	}
 
-	request, _ = json.Marshal(workflowDef)
+	workflowDefs := []WorkflowDef{workflowDef}
+	request, _ = json.Marshal(workflowDefs)
 
-	response, err = conductorClient.CreateWorkflowDef(string(request))
+	response, err = conductorClient.UpdateWorkflowDefs(string(request))
 	if err != nil {
-		log.Fatalf("error while trying to register workflow definitions", err)
+		log.Fatalf("error while trying to register workflow definitions: %v", err)
 		return
 	}
 	log.Println(response)
@@ -134,8 +159,52 @@ func main() {
 
 	conductorWorker := conductor.NewConductorWorker(viper.GetString("CONDUCTOR_API"), 1, 10000)
 
-	conductorWorker.Start("task_1", Task_1_Execution_Function, false)
-	conductorWorker.Start("task_2", Task_2_Execution_Function, true)
+	conductorWorker.Start(VerifyIfIdentsAreAddedTaskName, VerifyIfIdentsAreAddedTask, false)
+	conductorWorker.Start(AddIdentsTaskName, AddIdentsTask, false)
+
+	version := 1
+
+	correlationID := uuid.New()
+
+	input := map[string]interface{}{
+		"identType": "animation",
+		"contentId": "my_unique_content_id",
+	}
+	inputJSON, _ := json.Marshal(input)
+	response, err := conductorClient.StartWorkflow(WorkflowName, version, correlationID, string(inputJSON))
+	if err != nil {
+		log.Fatalf("error while trying to start workflow: %v", err)
+		return
+	}
+	log.Println(response)
+
+	select {}
+}
+
+func VerifyIfIdentsAreAddedTask(t *task.Task) (taskResult *task.TaskResult, err error) {
+	log.Println("Executing VerifyIfIdentsAreAdded for", t.TaskType)
+
+	taskResult = task.NewTaskResult(t)
+
+	output := map[string]interface{}{
+		"is_idents_added": false,
+	}
+	taskResult.OutputData = output
+	taskResult.Status = "COMPLETED"
+	err = nil
+
+	return taskResult, err
+}
+
+func AddIdentsTask(t *task.Task) (taskResult *task.TaskResult, err error) {
+	log.Println("Executing AddIdents for", t.TaskType)
+
+	taskResult = task.NewTaskResult(t)
+
+	taskResult.Status = "COMPLETED"
+	err = nil
+
+	return taskResult, err
 }
 
 // Implementation for "task_1"
