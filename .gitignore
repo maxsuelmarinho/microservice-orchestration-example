@@ -32,4 +32,5 @@ out/
 .vscode/
 
 /logs/
-/conductor-service/bin/
+/conductor-java/logs/
+/conductor-java/bin/

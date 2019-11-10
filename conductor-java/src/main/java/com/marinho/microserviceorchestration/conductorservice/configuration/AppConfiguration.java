@@ -24,7 +24,6 @@ import java.util.Locale;
 
 @Configuration
 public class AppConfiguration implements WebMvcConfigurer {
-    private static final Logger LOG = LoggerFactory.getLogger(AppConfiguration.class);
 
     @Value("${conductor.server.uri:http://localhost:8080/api/}")
     private String conductorServerUri;

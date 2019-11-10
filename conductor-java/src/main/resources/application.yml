@@ -1,13 +1,13 @@
 spring:
   application:
-    name: conductor-service
+    name: conductor-java
   messages:
     fallback-to-system-locale: false
   output:
     ansi:
       enabled: ALWAYS
 server:
-  port: 8080
+  port: 2223
 
 conductor:
   server:

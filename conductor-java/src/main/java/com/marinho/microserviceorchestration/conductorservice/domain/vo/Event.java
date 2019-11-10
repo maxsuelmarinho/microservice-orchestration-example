@@ -1,7 +1,6 @@
 package com.marinho.microserviceorchestration.conductorservice.domain.vo;
 
 public class Event {
-
     private BookingEvent bookingEvent;
     private String userID;
 

@@ -4,16 +4,7 @@ import java.util.Date;
 
 public class BookingEvent {
     private BookingProcessUpdate bookingProcessUpdate;
-
     private Date timeStamp;
-
-    @Override
-    public String toString() {
-        return "BookingEvent{" +
-                "bookingProcessUpdate=" + bookingProcessUpdate +
-                ", timeStamp=" + timeStamp +
-                '}';
-    }
 
     public BookingProcessUpdate getBookingProcessUpdate() {
         return bookingProcessUpdate;
@@ -29,5 +20,13 @@ public class BookingEvent {
 
     public void setTimeStamp(final Date timeStamp) {
         this.timeStamp = timeStamp;
+    }
+
+    @Override
+    public String toString() {
+        return "BookingEvent{" +
+                "bookingProcessUpdate=" + bookingProcessUpdate +
+                ", timeStamp=" + timeStamp +
+                '}';
     }
 }

@@ -1,5 +1,6 @@
-package com.marinho.microserviceorchestration.conductorservice.worker;
+package com.marinho.microserviceorchestration.conductorservice.conductor.worker;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marinho.microserviceorchestration.conductorservice.common.Constants;
 import com.netflix.conductor.client.http.MetadataClient;
 import com.netflix.conductor.client.http.TaskClient;
@@ -25,12 +26,16 @@ public class TaskSampleWorker {
     @Autowired
     private MetadataClient metadataClient;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     /**
      * Poll the conductor for task executions.
      */
     public void initConductorPolling() {
 
         final Worker worker = new ConductorWorker(
+                mapper,
                 Constants.TASK_SAMPLE);
 
         // Create WorkflowTaskCoordinator

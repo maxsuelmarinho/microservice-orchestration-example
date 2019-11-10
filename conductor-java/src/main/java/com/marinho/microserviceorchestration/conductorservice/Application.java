@@ -1,6 +1,6 @@
 package com.marinho.microserviceorchestration.conductorservice;
 
-import com.marinho.microserviceorchestration.conductorservice.worker.TaskSampleWorker;
+import com.marinho.microserviceorchestration.conductorservice.conductor.worker.TaskSampleWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 public class Application implements CommandLineRunner {
 	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
-	@Value("${spring.application.name:conductor-service}")
+	@Value("${spring.application.name:conductor-java}")
 	public String appName;
 
 	@Autowired

@@ -1,11 +1,8 @@
 package com.marinho.microserviceorchestration.conductorservice.domain.vo;
 
 public class BookingProcessUpdate {
-
     private String name;
-
     private String password;
-
     private String phoneNumber;
     private String email;
 

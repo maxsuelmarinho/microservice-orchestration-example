@@ -1,4 +1,4 @@
-package com.marinho.microserviceorchestration.conductorservice.worker;
+package com.marinho.microserviceorchestration.conductorservice.conductor.worker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marinho.microserviceorchestration.conductorservice.common.Constants;
@@ -12,8 +12,10 @@ import org.slf4j.LoggerFactory;
 public class ConductorWorker implements Worker {
     private static final Logger LOG = LoggerFactory.getLogger(ConductorWorker.class);
     private final String taskDefName;
+    private final ObjectMapper mapper;
 
-    public ConductorWorker(final String taskDefName) {
+    public ConductorWorker(final ObjectMapper mapper, final String taskDefName) {
+        this.mapper = mapper;
         this.taskDefName = taskDefName;
     }
 
@@ -27,8 +29,6 @@ public class ConductorWorker implements Worker {
         LOG.info("Executing {}", taskDefName);
         final TaskResult result = new TaskResult(task);
 
-        // Recommended to use ObjectMapper as bean if planning to use it.
-        final ObjectMapper mapper = new ObjectMapper();
         // TODO: Validate getInputData
         final Event input = mapper.convertValue(task.getInputData().get(Constants.EVENT), Event.class);
 

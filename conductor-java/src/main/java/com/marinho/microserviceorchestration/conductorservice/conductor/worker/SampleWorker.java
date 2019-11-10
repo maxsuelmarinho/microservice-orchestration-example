@@ -1,4 +1,4 @@
-package com.marinho.microserviceorchestration.conductorservice.worker;
+package com.marinho.microserviceorchestration.conductorservice.conductor.worker;
 
 import com.netflix.conductor.client.worker.Worker;
 import com.netflix.conductor.common.metadata.tasks.Task;
