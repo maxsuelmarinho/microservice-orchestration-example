@@ -45,33 +45,33 @@ public class WorkflowDefController {
         wfInput.add(Constants.EVENT);
         def.setInputParameters(wfInput);
 
-        final WorkflowTask workflowTask0 = new WorkflowTask();
-        workflowTask0.setName(Constants.TASK_SAMPLE);
-        workflowTask0.setTaskReferenceName(Constants.TASK_SAMPLE);
-        workflowTask0.setWorkflowTaskType(TaskType.SIMPLE);
-        workflowTask0.setStartDelay(0);
+        final WorkflowTask simpleTask = new WorkflowTask();
+        simpleTask.setName(Constants.TASK_SAMPLE);
+        simpleTask.setTaskReferenceName(Constants.TASK_SAMPLE);
+        simpleTask.setWorkflowTaskType(TaskType.SIMPLE);
+        simpleTask.setStartDelay(0);
         Map<String, Object> input = new HashMap<>(1);
         input.put(Constants.EVENT, "${workflow.input.event}");
-        workflowTask0.setInputParameters(input);
+        simpleTask.setInputParameters(input);
 
-        final WorkflowTask workflowTask1 = new WorkflowTask();
-        workflowTask1.setName("IS_APPROVED");
-        workflowTask1.setTaskReferenceName("IS_APPROVED");
-        workflowTask1.setWorkflowTaskType(TaskType.DECISION);
+        final WorkflowTask approvedDecisionTask = new WorkflowTask();
+        approvedDecisionTask.setName("IS_APPROVED");
+        approvedDecisionTask.setTaskReferenceName("IS_APPROVED");
+        approvedDecisionTask.setWorkflowTaskType(TaskType.DECISION);
         input = new HashMap<>(4);
         input.put(Constants.APPROVED, String.format("${%s.output.approved}", Constants.TASK_SAMPLE));
         input.put("actionTakenBy", String.format("${%s.output.actionTakenBy}", Constants.TASK_SAMPLE));
         input.put("amount", String.format("${%s.output.amount}", Constants.TASK_SAMPLE));
         input.put("period", String.format("${%s.output.period}", Constants.TASK_SAMPLE));
-        workflowTask1.setInputParameters(input);
-        workflowTask1.setCaseValueParam(Constants.APPROVED);
+        approvedDecisionTask.setInputParameters(input);
+        approvedDecisionTask.setCaseValueParam(Constants.APPROVED);
 
         final List<WorkflowTask> listWFT = new ArrayList<>(1);
-        final WorkflowTask workflowTask2 = new WorkflowTask();
-        workflowTask2.setName(Constants.TASK_HTTP);
-        workflowTask2.setTaskReferenceName(Constants.TASK_HTTP);
-        workflowTask2.setType("HTTP");
-        workflowTask2.setStartDelay(0);
+        final WorkflowTask httpTask = new WorkflowTask();
+        httpTask.setName(Constants.TASK_HTTP);
+        httpTask.setTaskReferenceName(Constants.TASK_HTTP);
+        httpTask.setType(TaskType.HTTP.name());
+        httpTask.setStartDelay(0);
         input = new HashMap<>(2);
         final Map<String, Object> httpRequest = new HashMap<>(3);
         httpRequest.put("method", HttpMethod.GET);
@@ -79,23 +79,23 @@ public class WorkflowDefController {
         // you can place any other REST endpoint with required payload support
         httpRequest.put("uri",
                 String
-                        .format("http://192.168.0.20:%s/bookingprocess/${%s.taskId}?taskId=${CPEWF_TASK_ID}", port,
+                        .format("http://booking-service:%s/bookingprocess/${%s.taskId}?taskId=${CPEWF_TASK_ID}", port,
                                 Constants.TASK_SAMPLE));
         httpRequest.put("contentType", "application/json");
         input.put("http_request", httpRequest);
         final Map<String, Object> body = new HashMap<>(1);
         body.put("taskId", "${CPEWF_TASK_ID}");
         input.put("body", body);
-        workflowTask2.setInputParameters(input);
+        httpTask.setInputParameters(input);
 
-        listWFT.add(workflowTask2);
+        listWFT.add(httpTask);
         final Map<String, List<WorkflowTask>> decisionCases = new HashMap<>();
         decisionCases.put("true", listWFT);
-        workflowTask1.setDecisionCases(decisionCases);
-        workflowTask1.setStartDelay(0);
+        approvedDecisionTask.setDecisionCases(decisionCases);
+        approvedDecisionTask.setStartDelay(0);
 
-        def.getTasks().add(workflowTask0);
-        def.getTasks().add(workflowTask1);
+        def.getTasks().add(simpleTask);
+        def.getTasks().add(approvedDecisionTask);
 
         final Map<String, Object> output = new HashMap<>(1);
         output.put("last_task_Id", "${task_http.output..body}");
