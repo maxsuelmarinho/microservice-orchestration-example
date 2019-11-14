@@ -19,6 +19,7 @@ FROM node:9-alpine
 # Install the required packages for the node build
 # to run on alpine
 RUN apk update && apk add \
+  tzdata \
   autoconf \
   automake \
   libtool \

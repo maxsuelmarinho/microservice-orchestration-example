@@ -15,6 +15,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - TZ="America/Sao_Paulo"
       - CONFIG_PROP=config.properties
     networks:
       - microservice-orchestration
@@ -33,6 +34,7 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - TZ="America/Sao_Paulo"
       - WF_SERVER=http://conductor-server:8080/api/
     networks:
       - microservice-orchestration

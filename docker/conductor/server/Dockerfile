@@ -13,6 +13,8 @@ RUN ./gradlew build -x test
 # 1. Bin stage
 FROM openjdk:8-jre-alpine
 
+RUN apk update && apk add tzdata
+
 # Make app folders
 RUN mkdir -p /app/config /app/logs /app/libs
 
